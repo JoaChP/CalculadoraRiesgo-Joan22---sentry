@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calculadora de Riesgo</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="./style.css">
+
+  <!-- 1) Loader Script de Sentry (déjalo igual) -->
+  <script src="https://js.sentry-cdn.com/9f73ebcd503ecdb650d346e03e56bc14.min.js" crossorigin="anonymous"></script>
+
+  <!-- 2) Init explícito con TU DSN -->
+  <script>
+    Sentry.onLoad(function () {
+      const env = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? 'development'
+        : 'production';
+
+      Sentry.init({
+        // ⚠️ Reemplaza por tu DSN HTTP (el de la pestaña Npm/Yarn)
+        dsn: "https://TU_DSN_HTTP",
+        enabled: true,
+        environment: env,
+        tracesSampleRate: 0,
+        replaysSessionSampleRate: 0,
+        replaysOnErrorSampleRate: 0,
+        ignoreErrors: [/ResizeObserver loop limit exceeded/i],
+        denyUrls: [/extensions\//i, /^chrome:\/\//i],
+        beforeSend(event) {
+          const msg = event?.message || event?.exception?.values?.[0]?.value || "";
+          if (/^Script error\.?$/i.test(msg)) return null; // ruido externo
+          return event;
+        },
+      });
+
+      Sentry.setTag('app', 'calc-riesgo');
+      Sentry.setTag('module', 'ui');
+      Sentry.setRelease('calc-riesgo@1.0.0');
+    });
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo"><i class="bi bi-shield-lock-fill"></i></div>
+      <div class="titles"><h1>Calculadora de Riesgo de Vulnerabilidades</h1></div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <h2 class="panel-title"><i class="bi bi-clipboard2-check"></i> Evaluación de Riesgo</h2>
+
+      <div class="field">
+        <label for="descripcion"><i class="bi bi-journal-text"></i> Describe el riesgo (opcional)</label>
+        <textarea id="descripcion" rows="3" placeholder="Ej.: Exposición de credenciales en repositorio público..."></textarea>
+        <small id="descContador" class="muted">0/300</small>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="aparicion"><i class="bi bi-bullseye"></i> Aparición (Probabilidad) *</label>
+          <select id="aparicion" disabled><option value="">Cargando niveles...</option></select>
+        </div>
+        <div class="field">
+          <label for="gravedad"><i class="bi bi-lightning-charge"></i> Gravedad (Impacto) *</label>
+          <select id="gravedad" disabled><option value="">Cargando niveles...</option></select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btnCalcular" class="btn primary" disabled><i class="bi bi-rocket-takeoff"></i> Calcular</button>
+        <button id="btnLimpiar" class="btn"><i class="bi bi-eraser"></i> Limpiar</button>
+      </div>
+
+      <div id="resultado" class="resultado" hidden>
+        <div class="resultado-badge">
+          <i id="resultadoIcono" class="bi"></i>
+          <span id="resultadoNivel">—</span>
+        </div>
+        <div class="resultado-info">
+          <div><strong>Valor de Riesgo:</strong> <span id="resultadoValor">—</span></div>
+          <div id="resultadoRecom" class="muted">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title"><i class="bi bi-grid-3x3-gap-fill"></i> Matriz de Evaluación de Riesgo</h2>
+      <div class="tabla-wrap">
+        <table id="tablaMatriz" class="matriz"></table>
+      </div>
+
+      <div class="actions" style="margin-top:12px">
+        <button id="btnErrorSentry" class="btn" style="background:#dc2626">
+          <i class="bi bi-bug-fill"></i> Enviar error de prueba a Sentry
+        </button>
+        <small class="muted">No rompe la app; solo envía un evento de error.</small>
+      </div>
+
+      <details class="legend">
+        <summary><i class="bi bi-info-circle"></i> Leyenda</summary>
+        <div class="legend-items">
+          <div class="lg-item"><span class="color color-marginal"></span> Riesgo Marginal (1–3)</div>
+          <div class="lg-item"><span class="color color-aceptable"></span> Riesgo Aceptable (4–8)</div>
+          <div class="lg-item"><span class="color color-importante"></span> Riesgo Importante (9–16)</div>
+          <div class="lg-item"><span class="color color-muygrave"></span> Riesgo Muy Grave (17–25)</div>
+        </div>
+      </details>
+    </section>
+
+    <footer class="app-footer">
+      <span><i class="bi bi-code-slash"></i> Elaborado por Joan Chavarría Peraza</span>
+    </footer>
+  </main>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
