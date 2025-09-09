@@ -48,10 +48,7 @@
   </script>
 
   <!-- Sentry SDK -->
-<script 
-  src="https://browser.sentry-cdn.com/7.64.0/bundle.tracing.min.js" 
-  crossorigin="anonymous"
-></script>
+<script src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js" crossorigin="anonymous"></script>
 
 <script>
   Sentry.onLoad(function() {
@@ -59,25 +56,19 @@
 
     Sentry.init({
       dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
+      enabled: true,
       environment: env,
       release: 'calc-riesgo@1.0.0',
-
-      // Performance monitoring
-      tracesSampleRate: 1.0,
       
-      // Error tracking
-      integrations: [
-        new Sentry.BrowserTracing({
-          tracingOrigins: ["localhost", /^\//, /^calculadora-riesgo.*\.vercel\.app$/],
-        }),
-      ],
-
-      beforeBreadcrumb(breadcrumb) {
-        return breadcrumb.category === 'console' ? null : breadcrumb;
-      }
+      // Configuración básica sin tracing
+      integrations: [],
+      tracesSampleRate: 0,
+      
+      // Habilita solo logs básicos
+      enableLogs: true
     });
 
-    // Tags globales
+    // Solo tags esenciales
     Sentry.setTag("app", "calc-riesgo");
   });
 </script>
