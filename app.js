@@ -1,23 +1,8 @@
 // ===============================
-// MODO 100% FRONTEND (sin backend)
+// 100% FRONTEND (sin backend)
 // ===============================
 
-// ---------- util: log a consola + enviar a Sentry (Logs) ----------
-function logSentry(title, extra = {}, level = 'log') {
-  // 1) consola normal (para ti)
-  const tag = `[Riesgo] ${title}`;
-  if (level === 'warn') console.warn(tag, extra);
-  else if (level === 'error') console.error(tag, extra);
-  else console.log(tag, extra);
-
-  // 2) mensaje explícito a Sentry Logs
-  try {
-    // level: 'log' | 'info' | 'warning' | 'error' | 'fatal' (para Logs usa 'log' y 'warning')
-    Sentry.captureMessage(tag, { level: level === 'warn' ? 'warning' : level, extra });
-  } catch (_) { /* Sentry todavía no cargó */ }
-}
-
-// ---------- refs UI ----------
+// --- Referencias de UI
 const aparicionSel = document.getElementById('aparicion');
 const gravedadSel  = document.getElementById('gravedad');
 const btnCalcular  = document.getElementById('btnCalcular');
@@ -34,6 +19,7 @@ const desc         = document.getElementById('descripcion');
 const descContador = document.getElementById('descContador');
 const tablaMatriz  = document.getElementById('tablaMatriz');
 
+// --- Catálogos
 const DATA_NIVELES_APARICION = [
   { nombre: 'MUY BAJA', valor: 1, descripcion: 'Ocurre rara vez' },
   { nombre: 'BAJA',     valor: 2, descripcion: 'Ocurre poco' },
@@ -50,7 +36,7 @@ const DATA_NIVELES_GRAVEDAD = [
   { nombre: 'MUY ALTO', valor: 5, descripcion: 'Impacto crítico' },
 ];
 
-// Contador de descripción
+// Contador de caracteres
 desc?.addEventListener('input', () => {
   const v = desc.value.slice(0, 300);
   if (v !== desc.value) desc.value = v;
@@ -110,9 +96,9 @@ function cargarNivelesLocal() {
   fillSelect(gravedadSel,  DATA_NIVELES_GRAVEDAD,  'Selecciona un nivel…');
   aparicionSel.disabled = false;
   gravedadSel.disabled  = false;
-  btnCalcular.disabled  = false;
 }
 
+// Render de la matriz 5x5
 function renderMatriz() {
   if (!tablaMatriz) return;
   tablaMatriz.innerHTML = '';
@@ -187,6 +173,7 @@ function nivelClass(v) {
   return 'muygrave';
 }
 
+// Lógica de cálculo
 function calcularLocal(apar, grav) {
   const valor = apar * grav;
   let nivel, recomendacion;
@@ -199,13 +186,18 @@ function calcularLocal(apar, grav) {
   return { valor, nivel, recomendacion };
 }
 
-// ---------- flujo principal ----------
 async function calcular() {
   const apar = parseInt(aparicionSel.value, 10);
   const grav = parseInt(gravedadSel.value, 10);
   if (!apar || !grav) return;
 
-  logSentry('Inicio de cálculo', { apar, grav }, 'log');
+  // Log a Sentry (nivel info)
+  Sentry.captureMessage('[Riesgo] Inicio de cálculo', {
+    level: 'info',
+    extra: {
+      apar, grav, descripcion: (desc?.value || '')
+    }
+  });
 
   btnCalcular.disabled = true;
   btnCalcular.innerHTML = '<i class="bi bi-hourglass-split"></i> Calculando...';
@@ -228,11 +220,12 @@ async function calcular() {
 
     resaltarCelda(apar, grav);
 
-    // log explícito a Sentry (se indexa como Log)
-    logSentry('Cálculo completado', { ...data }, 'log');
+    // Log de resultado
+    Sentry.captureMessage('[Riesgo] Cálculo completado', {
+      level: 'info',
+      extra: { valor: data.valor, nivel: data.nivel, recomendacion: data.recomendacion }
+    });
 
-  } catch (e) {
-    logSentry('Fallo en cálculo', { error: String(e) }, 'error');
   } finally {
     btnCalcular.disabled = false;
     btnCalcular.innerHTML = '<i class="bi bi-rocket-takeoff"></i> Calcular';
@@ -247,7 +240,7 @@ function limpiar() {
   limpiarSeleccion();
 }
 
-// --- Botón: error de prueba hacia Sentry (Issue) ---
+// --- Botón: error de prueba hacia Sentry ---
 btnErrorSentry?.addEventListener('click', async () => {
   try {
     const ctx = {
@@ -272,22 +265,26 @@ btnErrorSentry?.addEventListener('click', async () => {
     const client = hub?.getClient?.();
     if (client?.flush)      await client.flush(3000);
     else if (client?.close) await client.close(3000);
+    else                    await new Promise(r => setTimeout(r, 1200));
 
-    logSentry('Error de prueba enviado', { eventId }, 'warn');
+    console.log('[Sentry] EventId:', eventId);
     alert('✅ Se envió un error de prueba a Sentry. Revisa Issues.');
   } catch (e) {
-    logSentry('No se pudo enviar el error de prueba', { error: String(e) }, 'error');
+    console.error('No se pudo enviar a Sentry', e);
     alert('⚠️ No se pudo enviar el error a Sentry (ver consola).');
   }
 });
 
-// Boot
 btnCalcular?.addEventListener('click', calcular);
 btnLimpiar ?.addEventListener('click', limpiar);
 
+// Boot
 renderMatriz();
 cargarNivelesLocal();
 resetResultado();
 
-// log de arranque explícito (aparece en Logs)
-logSentry('App lista', { href: location.href, env: (location.hostname === 'localhost' || location.hostname.startsWith('127.')) ? 'dev' : 'prod' }, 'log');
+// Un mensaje de arranque (log informativo a Sentry)
+Sentry.captureMessage('[Riesgo] App lista', {
+  level: 'info',
+  extra: { href: location.href, env: Sentry.getCurrentHub()?.getScope()?.getTags()?.environment || '' }
+});
