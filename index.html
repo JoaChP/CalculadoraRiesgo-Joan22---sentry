@@ -24,31 +24,23 @@
         dsn: 'https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168',
         enabled: true,
         environment: env,
-        release: 'calc-riesgo@1.0.0',      // ← Release aquí (sin setRelease)
-
-        // No activamos tracing/replay para no consumir cuota
-        tracesSampleRate: 0,
-        replaysSessionSampleRate: 0,
-        replaysOnErrorSampleRate: 0,
-
-        // Filtro de ruido típico
-        beforeSend(event) {
-          const msg = event?.message || event?.exception?.values?.[0]?.value || '';
-          if (/^Script error\.?$/i.test(msg)) return null;
-          return event;
-        },
-
-        // Habilita el pipeline de logs (los enviamos con captureMessage)
-        enableLogs: true,
+        release: 'calc-riesgo@1.0.0',
+        
+        // Activamos algunos features para debug
+        debug: true,
+        tracesSampleRate: 1.0,
+        
+        // Habilita el pipeline de logs
+        enableLogs: true
       });
 
+      // Tags globales
       Sentry.setTag('app', 'calc-riesgo');
       Sentry.setTag('module', 'ui');
 
-      // --- NUEVO: Log de arranque como error para que aparezca en Issues ---
-      Sentry.captureMessage('[Riesgo] App lista', {
-        level: 'error', // Aparecerá como Issue en Sentry
-        extra: { href: location.href, env }
+      // Log de prueba como error
+      Sentry.captureMessage('[Riesgo] App iniciada', {
+        level: 'error'
       });
     });
   </script>
