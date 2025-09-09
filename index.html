@@ -55,29 +55,33 @@
   Sentry.init({
     dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
     
-    // Configuración mínima
-    debug: true,
+    // Configuración mínima sin debug
+    enabled: true,
     environment: 'production',
     
-    // Deshabilitar características que causan errores
+    // Deshabilitar características problemáticas
     tracesSampleRate: 0,
     integrations: [],
     
+    // Callback para verificar envío de eventos
     beforeSend(event) {
-      console.log('Enviando evento a Sentry:', event);
+      console.log('Sentry event:', event);
       return event;
     }
   });
 
-  // Enviar un evento de prueba inmediatamente
-  try {
-    throw new Error('Test Error');
-  } catch (error) {
-    Sentry.captureException(error);
+  // Función para enviar error de prueba
+  window.sendTestError = function() {
+    try {
+      throw new Error('Error de prueba manual');
+    } catch (error) {
+      console.log('Enviando error a Sentry...');
+      Sentry.captureException(error);
+    }
   }
 
-  // También enviar un mensaje de log
-  Sentry.captureMessage('Aplicación iniciada', 'info');
+  // Agregar listener al botón de error
+  document.getElementById('btnErrorSentry').onclick = sendTestError;
 </script>
 
   <style>
