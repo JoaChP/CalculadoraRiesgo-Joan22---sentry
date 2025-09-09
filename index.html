@@ -47,6 +47,41 @@
     });
   </script>
 
+  <!-- Sentry SDK -->
+<script 
+  src="https://browser.sentry-cdn.com/7.64.0/bundle.tracing.min.js" 
+  crossorigin="anonymous"
+></script>
+
+<script>
+  Sentry.onLoad(function() {
+    const env = location.hostname === 'localhost' ? 'development' : 'production';
+
+    Sentry.init({
+      dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
+      environment: env,
+      release: 'calc-riesgo@1.0.0',
+
+      // Performance monitoring
+      tracesSampleRate: 1.0,
+      
+      // Error tracking
+      integrations: [
+        new Sentry.BrowserTracing({
+          tracingOrigins: ["localhost", /^\//, /^calculadora-riesgo.*\.vercel\.app$/],
+        }),
+      ],
+
+      beforeBreadcrumb(breadcrumb) {
+        return breadcrumb.category === 'console' ? null : breadcrumb;
+      }
+    });
+
+    // Tags globales
+    Sentry.setTag("app", "calc-riesgo");
+  });
+</script>
+
   <style>
     /* Unos estilos mínimos por si no cargas style.css */
     :root {
