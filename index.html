@@ -51,18 +51,33 @@
 <script src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js" crossorigin="anonymous"></script>
 
 <script>
+  // Inicialización básica de Sentry
   Sentry.init({
     dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
-    environment: 'production',
-    release: 'calc-riesgo@1.0.0',
     
     // Configuración mínima
-    integrations: [],
-    tracesSampleRate: 0.0,
+    debug: true,
+    environment: 'production',
     
-    // Solo habilitar logs básicos
-    enableLogs: true
+    // Deshabilitar características que causan errores
+    tracesSampleRate: 0,
+    integrations: [],
+    
+    beforeSend(event) {
+      console.log('Enviando evento a Sentry:', event);
+      return event;
+    }
   });
+
+  // Enviar un evento de prueba inmediatamente
+  try {
+    throw new Error('Test Error');
+  } catch (error) {
+    Sentry.captureException(error);
+  }
+
+  // También enviar un mensaje de log
+  Sentry.captureMessage('Aplicación iniciada', 'info');
 </script>
 
   <style>
