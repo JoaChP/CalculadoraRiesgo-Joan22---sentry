@@ -27,6 +27,25 @@
   });
 </script>
 
+<!-- Sentry SDK -->
+<script
+  src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js"
+  crossorigin="anonymous"
+></script>
+
+<script>
+  Sentry.init({
+    dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
+    integrations: [
+      new Sentry.BrowserTracing()
+    ],
+    tracesSampleRate: 1.0,
+    // Set sampling rate for performance data
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  });
+</script>
+
   <style>
     /* Unos estilos mínimos por si no cargas style.css */
     :root {

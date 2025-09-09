@@ -275,20 +275,18 @@ cargarNivelesLocal();
 resetResultado();
 
 // Un mensaje de arranque (log informativo a Sentry)
-Sentry.captureMessage('[Riesgo] App lista', {
-  level: 'info',
-  extra: { 
-    href: location.href,
-    env: 'production' // Valor fijo en lugar de usar getCurrentHub
-  }
+sendToSentry('[Riesgo] App lista', 'info', {
+  href: location.href,
+  env: 'production'
 });
 
 // Función helper para logs
 function sendToSentry(message, level = 'info', extra = {}) {
   if (window.Sentry) {
-    Sentry.captureMessage(message, {
-      level: level,
-      extra: extra
+    Sentry.withScope(function(scope) {
+      scope.setLevel(level);
+      scope.setExtras(extra);
+      Sentry.captureMessage(message);
     });
   }
 }
@@ -296,8 +294,9 @@ function sendToSentry(message, level = 'info', extra = {}) {
 // Función helper para errores
 function sendErrorToSentry(error, extra = {}) {
   if (window.Sentry) {
-    Sentry.captureException(error, {
-      extra: extra
+    Sentry.withScope(function(scope) {
+      scope.setExtras(extra);
+      Sentry.captureException(error);
     });
   }
 }
