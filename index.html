@@ -11,17 +11,16 @@
   <!-- Estilos propios (opcional) -->
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- Sentry - configuración mínima absoluta -->
+  <!-- Sentry - Solo CDN básico -->
 <script src="https://js.sentry-cdn.com/9f73ebcd503ecdb650d346e03e56bc14.min.js"></script>
 
+<!-- Script mínimo para Sentry -->
 <script>
-  // Solo inicialización básica
-  document.addEventListener('DOMContentLoaded', function() {
-    // Sin configuración adicional - usar valores por defecto
+  document.addEventListener('DOMContentLoaded', () => {
     const btnError = document.getElementById('btnErrorSentry');
     if (btnError) {
-      btnError.addEventListener('click', function() {
-        // Usar la forma más básica de reportar
+      btnError.addEventListener('click', () => {
+        // Usar solo el método más básico
         Sentry.captureMessage('Test error', 'error');
       });
     }
