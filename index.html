@@ -47,27 +47,30 @@
     });
   </script>
 
-  <!-- Sentry SDK - Configuración básica -->
-<script src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js" crossorigin="anonymous"></script>
+  <!-- Sentry SDK - solo configuración básica -->
+<script 
+  src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js"
+  crossorigin="anonymous"
+></script>
 
 <script>
   // Esperar a que el DOM esté listo
   document.addEventListener('DOMContentLoaded', function() {
-    // Inicialización básica de Sentry
+    // Configuración mínima de Sentry
     Sentry.init({
       dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
-      enabled: true,
-      release: 'calc-riesgo@1.0.0'
+      enabled: true
     });
 
-    // Configurar el botón de error solo cuando exista
+    // Configurar botón de error
     const btnError = document.getElementById('btnErrorSentry');
     if (btnError) {
-      btnError.onclick = function() {
-        Sentry.captureMessage('Error de prueba manual', {
+      btnError.addEventListener('click', function() {
+        // Enviar error de prueba simple
+        Sentry.captureMessage('Error de prueba desde botón', {
           level: 'error'
         });
-      };
+      });
     }
   });
 </script>
