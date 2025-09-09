@@ -1,32 +1,52 @@
-// ===============================
-// MODO 100% FRONTEND (sin backend)
-// ===============================
+/* =========================================================================
+   Calculadora de Riesgo (100% frontend, sin backend)
+   - Lógica de UI
+   - Logs útiles a consola (Sentry los levanta con consoleLoggingIntegration)
+   - Traza manual básica con Sentry.startSpan (si está disponible)
+   - Botón de “error de prueba” que envía un evento a Sentry
+   ========================================================================= */
 
-// ---------- Sentry log helper ----------
-const Log = {
-  info(msg, data)  { console.info(msg, data ?? "");  Sentry.captureMessage(String(msg), "info"); },
-  warn(msg, data)  { console.warn(msg, data ?? "");  Sentry.captureMessage(String(msg), "warning"); },
-  error(msg, data) { console.error(msg, data ?? ""); Sentry.captureMessage(String(msg), "error"); }
-};
+'use strict';
 
-// ---------- DOM ----------
-const aparicionSel   = document.getElementById('aparicion');
-const gravedadSel    = document.getElementById('gravedad');
-const btnCalcular    = document.getElementById('btnCalcular');
-const btnLimpiar     = document.getElementById('btnLimpiar');
-const btnErrorSentry = document.getElementById('btnErrorSentry');
+const S = window.Sentry; // acceso corto
 
-const resultado = document.getElementById('resultado');
-const rNivel    = document.getElementById('resultadoNivel');
-const rValor    = document.getElementById('resultadoValor');
-const rRecom    = document.getElementById('resultadoRecom');
-const rIcono    = document.getElementById('resultadoIcono');
+// Utilidad: marcar migas en Sentry (no obligatorio pero útil)
+function breadcrumb(category, message, data) {
+  try {
+    S?.addBreadcrumb?.({ level: 'info', category, message, data });
+  } catch {}
+}
 
-const desc         = document.getElementById('descripcion');
-const descContador = document.getElementById('descContador');
-const tablaMatriz  = document.getElementById('tablaMatriz');
+// Utilidad: span manual si existe Tracing
+async function withSpan(name, fn) {
+  if (S?.startSpan) {
+    return S.startSpan({ name }, fn);
+  }
+  return fn();
+}
 
-// ---------- Datos ----------
+/* =============================
+   Referencias a elementos
+============================= */
+const aparicionSel    = document.getElementById('aparicion');
+const gravedadSel     = document.getElementById('gravedad');
+const btnCalcular     = document.getElementById('btnCalcular');
+const btnLimpiar      = document.getElementById('btnLimpiar');
+const btnErrorSentry  = document.getElementById('btnErrorSentry');
+
+const resultado       = document.getElementById('resultado');
+const rNivel          = document.getElementById('resultadoNivel');
+const rValor          = document.getElementById('resultadoValor');
+const rRecom          = document.getElementById('resultadoRecom');
+const rIcono          = document.getElementById('resultadoIcono');
+
+const desc            = document.getElementById('descripcion');
+const descContador    = document.getElementById('descContador');
+const tablaMatriz     = document.getElementById('tablaMatriz');
+
+/* =============================
+   Datos base
+============================= */
 const DATA_NIVELES_APARICION = [
   { nombre: 'MUY BAJA', valor: 1, descripcion: 'Ocurre rara vez' },
   { nombre: 'BAJA',     valor: 2, descripcion: 'Ocurre poco' },
@@ -43,11 +63,13 @@ const DATA_NIVELES_GRAVEDAD = [
   { nombre: 'MUY ALTO', valor: 5, descripcion: 'Impacto crítico' },
 ];
 
-// ---------- UI ----------
+/* =============================
+   UI: helpers
+============================= */
 desc?.addEventListener('input', () => {
   const v = desc.value.slice(0, 300);
   if (v !== desc.value) desc.value = v;
-  descContador.textContent = `${v.length}/300`;
+  if (descContador) descContador.textContent = `${v.length}/300`;
 });
 
 function fillSelect(select, items, placeholder) {
@@ -58,25 +80,25 @@ function fillSelect(select, items, placeholder) {
   opt0.textContent = placeholder;
   select.appendChild(opt0);
 
-  items.forEach((n) => {
+  for (const n of items) {
     const opt = document.createElement('option');
     opt.value = n.valor;
     opt.textContent = `${n.nombre} (${n.valor}) - ${n.descripcion}`;
     select.appendChild(opt);
-  });
+  }
 }
 
 function resetResultado() {
   if (!resultado) return;
   resultado.hidden = true;
-  rNivel.textContent = '—';
-  rValor.textContent = '—';
-  rRecom.textContent = '—';
-  rIcono.className = 'bi';
+  if (rNivel) rNivel.textContent = '—';
+  if (rValor) rValor.textContent = '—';
+  if (rRecom) rRecom.textContent = '—';
+  if (rIcono) rIcono.className = 'bi';
 }
 
 function limpiarSeleccion() {
-  tablaMatriz?.querySelectorAll('.cell.selected').forEach(el => el.classList.remove('selected'));
+  tablaMatriz?.querySelectorAll('.cell.selected').forEach((el) => el.classList.remove('selected'));
 }
 
 function resaltarCelda(a, g) {
@@ -100,9 +122,9 @@ gravedadSel ?.addEventListener('change', onSelectChange);
 function cargarNivelesLocal() {
   fillSelect(aparicionSel, DATA_NIVELES_APARICION, 'Selecciona un nivel…');
   fillSelect(gravedadSel,  DATA_NIVELES_GRAVEDAD,  'Selecciona un nivel…');
-  aparicionSel.disabled = false;
-  gravedadSel.disabled  = false;
-  btnCalcular.disabled  = false;
+  if (aparicionSel) aparicionSel.disabled = false;
+  if (gravedadSel) gravedadSel.disabled  = false;
+  if (btnCalcular) btnCalcular.disabled  = false;
 }
 
 function renderMatriz() {
@@ -156,9 +178,10 @@ function renderMatriz() {
       box.textContent = value;
 
       td.addEventListener('click', () => {
-        aparicionSel.value = String(a);
-        gravedadSel.value  = String(g);
-        resaltarCelda(aparicionSel.value, gravedadSel.value);
+        if (aparicionSel) aparicionSel.value = String(a);
+        if (gravedadSel)  gravedadSel.value  = String(g);
+        resaltarCelda(a, g);
+        breadcrumb('ui.select', 'Seleccionada celda matriz', { aparicion: a, gravedad: g });
       });
 
       td.appendChild(box);
@@ -179,19 +202,23 @@ function nivelClass(v) {
   return 'muygrave';
 }
 
+/* =============================
+   Cálculo
+============================= */
 function calcularLocal(apar, grav) {
   const valor = apar * grav;
   let nivel, recomendacion;
 
-  if (valor <= 3) { nivel = 'Marginal'; recomendacion = 'Monitoreo normal.'; }
-  else if (valor <= 8) { nivel = 'Aceptable'; recomendacion = 'Mitigar cuando sea posible.'; }
-  else if (valor <= 16) { nivel = 'Importante'; recomendacion = 'Planificar acciones de reducción.'; }
-  else { nivel = 'Muy Grave'; recomendacion = 'Acción inmediata.'; }
+  if (valor <= 3)      { nivel = 'Marginal';   recomendacion = 'Monitoreo normal.'; }
+  else if (valor <= 8) { nivel = 'Aceptable';  recomendacion = 'Mitigar cuando sea posible.'; }
+  else if (valor <= 16){ nivel = 'Importante'; recomendacion = 'Planificar acciones de reducción.'; }
+  else                 { nivel = 'Muy Grave';  recomendacion = 'Acción inmediata.'; }
 
   return { valor, nivel, recomendacion };
 }
 
 async function calcular() {
+  if (!aparicionSel || !gravedadSel) return;
   const apar = parseInt(aparicionSel.value, 10);
   const grav = parseInt(gravedadSel.value, 10);
   if (!apar || !grav) return;
@@ -199,27 +226,32 @@ async function calcular() {
   btnCalcular.disabled = true;
   btnCalcular.innerHTML = '<i class="bi bi-hourglass-split"></i> Calculando...';
 
+  breadcrumb('calc.start', 'Inicio de cálculo', { apar, grav });
+  console.log('[Riesgo] Inicio de cálculo', { apar, grav });
+
   try {
-    Log.info("[Riesgo] Inicio de cálculo", { apar, grav });
+    const data = await withSpan('calcularLocal', () => calcularLocal(apar, grav));
 
-    const data = calcularLocal(apar, grav);
+    if (resultado) resultado.hidden = false;
+    if (rNivel) rNivel.textContent = data.nivel ?? '—';
+    if (rValor) rValor.textContent = data.valor ?? '—';
+    if (rRecom) rRecom.textContent = data.recomendacion ?? '—';
 
-    resultado.hidden = false;
-    rNivel.textContent = data.nivel ?? '—';
-    rValor.textContent = data.valor ?? '—';
-    rRecom.textContent = data.recomendacion ?? '—';
-
-    rIcono.className = 'bi';
-    const lvl = (data.nivel || '').toUpperCase();
-    if (lvl.includes('MARGINAL'))        rIcono.classList.add('bi-emoji-smile');
-    else if (lvl.includes('ACEPTABLE'))  rIcono.classList.add('bi-emoji-neutral');
-    else if (lvl.includes('IMPORTANTE')) rIcono.classList.add('bi-emoji-dizzy');
-    else if (lvl.includes('MUY GRAVE'))  rIcono.classList.add('bi-emoji-angry');
-    else                                 rIcono.classList.add('bi-question-circle');
+    if (rIcono) {
+      rIcono.className = 'bi';
+      const lvl = (data.nivel || '').toUpperCase();
+      if (lvl.includes('MARGINAL'))        rIcono.classList.add('bi-emoji-smile');
+      else if (lvl.includes('ACEPTABLE'))  rIcono.classList.add('bi-emoji-neutral');
+      else if (lvl.includes('IMPORTANTE')) rIcono.classList.add('bi-emoji-dizzy');
+      else if (lvl.includes('MUY GRAVE'))  rIcono.classList.add('bi-emoji-angry');
+      else                                 rIcono.classList.add('bi-question-circle');
+    }
 
     resaltarCelda(apar, grav);
 
-    Log.info("[Riesgo] Cálculo completado", { valor: data.valor, nivel: data.nivel });
+    breadcrumb('calc.done', 'Cálculo completado', { result: data });
+    console.log('[Riesgo] Cálculo completado', data);
+
   } finally {
     btnCalcular.disabled = false;
     btnCalcular.innerHTML = '<i class="bi bi-rocket-takeoff"></i> Calcular';
@@ -227,15 +259,17 @@ async function calcular() {
 }
 
 function limpiar() {
-  aparicionSel.selectedIndex = 0;
-  gravedadSel.selectedIndex  = 0;
-  if (desc) { desc.value = ''; descContador.textContent = '0/300'; }
+  if (aparicionSel) aparicionSel.selectedIndex = 0;
+  if (gravedadSel)  gravedadSel.selectedIndex  = 0;
+  if (desc) { desc.value = ''; if (descContador) descContador.textContent = '0/300'; }
   resetResultado();
   limpiarSeleccion();
-  Log.info("[Riesgo] Formulario limpiado");
+  breadcrumb('ui.clear', 'Formulario limpiado');
 }
 
-// --- Botón: error de prueba hacia Sentry ---
+/* =============================
+   Botón de error de prueba
+============================= */
 btnErrorSentry?.addEventListener('click', async () => {
   try {
     const ctx = {
@@ -248,33 +282,40 @@ btnErrorSentry?.addEventListener('click', async () => {
     err.name = 'UIManualTestError';
 
     let eventId = null;
-    Sentry.withScope((scope) => {
-      scope.setLevel('error');
-      scope.setTag('source', 'ui-test-button');
-      scope.setContext('form', ctx);
-      scope.setFingerprint(['ui-manual-test-error']);
-      eventId = Sentry.captureException(err);
+    S?.withScope?.((scope) => {
+      scope.setLevel?.('error');
+      scope.setTag?.('source', 'ui-test-button');
+      scope.setContext?.('form', ctx);
+      scope.setFingerprint?.(['ui-manual-test-error']);
+      eventId = S.captureException?.(err);
     });
 
-    // Asegura el envío antes de que el usuario cierre la pestaña
-    const hub = Sentry.getCurrentHub?.();
+    const hub = S?.getCurrentHub?.();
     const client = hub?.getClient?.();
     if (client?.flush)      await client.flush(3000);
     else if (client?.close) await client.close(3000);
-    else                    await new Promise(r => setTimeout(r, 1200));
+    else                    await new Promise((r) => setTimeout(r, 1200));
 
-    console.info('[Sentry] EventId de prueba:', eventId);
-    alert('✅ Se envió un error de prueba a Sentry. Revisa Issues/Logs.');
+    console.log('[Sentry] EventId:', eventId);
+    alert('✅ Se envió un error de prueba a Sentry. Revisa Issues.');
   } catch (e) {
     console.error('No se pudo enviar a Sentry', e);
     alert('⚠️ No se pudo enviar el error a Sentry (ver consola).');
   }
 });
 
+/* =============================
+   Acciones
+============================= */
 btnCalcular?.addEventListener('click', calcular);
 btnLimpiar ?.addEventListener('click', limpiar);
 
-// Inicialización UI
 renderMatriz();
 cargarNivelesLocal();
 resetResultado();
+
+// Log de arranque (útil para Sentry Logs)
+console.log('[Riesgo] App lista', {
+  href: location.href,
+  env: (location.hostname === 'localhost' || location.hostname.startsWith('127.')) ? 'development' : 'production'
+});
