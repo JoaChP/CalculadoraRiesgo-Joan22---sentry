@@ -2,22 +2,31 @@
 // MODO 100% FRONTEND (sin backend)
 // ===============================
 
-const aparicionSel = document.getElementById('aparicion');
-const gravedadSel  = document.getElementById('gravedad');
-const btnCalcular  = document.getElementById('btnCalcular');
-const btnLimpiar   = document.getElementById('btnLimpiar');
+// ---------- Sentry log helper ----------
+const Log = {
+  info(msg, data)  { console.info(msg, data ?? "");  Sentry.captureMessage(String(msg), "info"); },
+  warn(msg, data)  { console.warn(msg, data ?? "");  Sentry.captureMessage(String(msg), "warning"); },
+  error(msg, data) { console.error(msg, data ?? ""); Sentry.captureMessage(String(msg), "error"); }
+};
+
+// ---------- DOM ----------
+const aparicionSel   = document.getElementById('aparicion');
+const gravedadSel    = document.getElementById('gravedad');
+const btnCalcular    = document.getElementById('btnCalcular');
+const btnLimpiar     = document.getElementById('btnLimpiar');
 const btnErrorSentry = document.getElementById('btnErrorSentry');
 
-const resultado    = document.getElementById('resultado');
-const rNivel       = document.getElementById('resultadoNivel');
-const rValor       = document.getElementById('resultadoValor');
-const rRecom       = document.getElementById('resultadoRecom');
-const rIcono       = document.getElementById('resultadoIcono');
+const resultado = document.getElementById('resultado');
+const rNivel    = document.getElementById('resultadoNivel');
+const rValor    = document.getElementById('resultadoValor');
+const rRecom    = document.getElementById('resultadoRecom');
+const rIcono    = document.getElementById('resultadoIcono');
 
 const desc         = document.getElementById('descripcion');
 const descContador = document.getElementById('descContador');
 const tablaMatriz  = document.getElementById('tablaMatriz');
 
+// ---------- Datos ----------
 const DATA_NIVELES_APARICION = [
   { nombre: 'MUY BAJA', valor: 1, descripcion: 'Ocurre rara vez' },
   { nombre: 'BAJA',     valor: 2, descripcion: 'Ocurre poco' },
@@ -34,6 +43,7 @@ const DATA_NIVELES_GRAVEDAD = [
   { nombre: 'MUY ALTO', valor: 5, descripcion: 'Impacto crítico' },
 ];
 
+// ---------- UI ----------
 desc?.addEventListener('input', () => {
   const v = desc.value.slice(0, 300);
   if (v !== desc.value) desc.value = v;
@@ -190,6 +200,8 @@ async function calcular() {
   btnCalcular.innerHTML = '<i class="bi bi-hourglass-split"></i> Calculando...';
 
   try {
+    Log.info("[Riesgo] Inicio de cálculo", { apar, grav });
+
     const data = calcularLocal(apar, grav);
 
     resultado.hidden = false;
@@ -206,6 +218,8 @@ async function calcular() {
     else                                 rIcono.classList.add('bi-question-circle');
 
     resaltarCelda(apar, grav);
+
+    Log.info("[Riesgo] Cálculo completado", { valor: data.valor, nivel: data.nivel });
   } finally {
     btnCalcular.disabled = false;
     btnCalcular.innerHTML = '<i class="bi bi-rocket-takeoff"></i> Calcular';
@@ -218,6 +232,7 @@ function limpiar() {
   if (desc) { desc.value = ''; descContador.textContent = '0/300'; }
   resetResultado();
   limpiarSeleccion();
+  Log.info("[Riesgo] Formulario limpiado");
 }
 
 // --- Botón: error de prueba hacia Sentry ---
@@ -241,14 +256,15 @@ btnErrorSentry?.addEventListener('click', async () => {
       eventId = Sentry.captureException(err);
     });
 
+    // Asegura el envío antes de que el usuario cierre la pestaña
     const hub = Sentry.getCurrentHub?.();
     const client = hub?.getClient?.();
     if (client?.flush)      await client.flush(3000);
     else if (client?.close) await client.close(3000);
     else                    await new Promise(r => setTimeout(r, 1200));
 
-    console.log('[Sentry] EventId:', eventId);
-    alert('✅ Se envió un error de prueba a Sentry. Revisa Issues.');
+    console.info('[Sentry] EventId de prueba:', eventId);
+    alert('✅ Se envió un error de prueba a Sentry. Revisa Issues/Logs.');
   } catch (e) {
     console.error('No se pudo enviar a Sentry', e);
     alert('⚠️ No se pudo enviar el error a Sentry (ver consola).');
@@ -258,6 +274,7 @@ btnErrorSentry?.addEventListener('click', async () => {
 btnCalcular?.addEventListener('click', calcular);
 btnLimpiar ?.addEventListener('click', limpiar);
 
+// Inicialización UI
 renderMatriz();
 cargarNivelesLocal();
 resetResultado();
