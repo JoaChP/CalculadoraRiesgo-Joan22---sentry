@@ -44,6 +44,12 @@
 
       Sentry.setTag('app', 'calc-riesgo');
       Sentry.setTag('module', 'ui');
+
+      // --- NUEVO: Log de arranque como error para que aparezca en Issues ---
+      Sentry.captureMessage('[Riesgo] App lista', {
+        level: 'error', // Aparecerá como Issue en Sentry
+        extra: { href: location.href, env }
+      });
     });
   </script>
 
@@ -172,6 +178,4 @@
   </main>
 
   <!-- Lógica de la app -->
-  <script src="./app.js" defer></script>
-</body>
-</html>
+  <script src="./app.js"
