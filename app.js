@@ -252,22 +252,13 @@ btnErrorSentry?.addEventListener('click', async () => {
     const err = new Error('UIManualTestError: error de prueba desde el botón');
     err.name = 'UIManualTestError';
 
-    let eventId = null;
-    Sentry.withScope((scope) => {
-      scope.setLevel('error');
-      scope.setTag('source', 'ui-test-button');
-      scope.setContext('form', ctx);
-      scope.setFingerprint(['ui-manual-test-error']);
-      eventId = Sentry.captureException(err);
+    // Usar la nueva función helper
+    sendErrorToSentry(err, {
+      source: 'ui-test-button',
+      context: ctx
     });
 
-    const hub = Sentry.getCurrentHub?.();
-    const client = hub?.getClient?.();
-    if (client?.flush)      await client.flush(3000);
-    else if (client?.close) await client.close(3000);
-    else                    await new Promise(r => setTimeout(r, 1200));
-
-    console.log('[Sentry] EventId:', eventId);
+    await new Promise(r => setTimeout(r, 1200));
     alert('✅ Se envió un error de prueba a Sentry. Revisa Issues.');
   } catch (e) {
     console.error('No se pudo enviar a Sentry', e);
@@ -286,19 +277,27 @@ resetResultado();
 // Un mensaje de arranque (log informativo a Sentry)
 Sentry.captureMessage('[Riesgo] App lista', {
   level: 'info',
-  extra: { href: location.href, env: Sentry.getCurrentHub()?.getScope()?.getTags()?.environment || '' }
+  extra: { 
+    href: location.href,
+    env: 'production' // Valor fijo en lugar de usar getCurrentHub
+  }
 });
 
-function logError(error) {
-  // Use basic error capture
+// Función helper para logs
+function sendToSentry(message, level = 'info', extra = {}) {
   if (window.Sentry) {
-    Sentry.captureException(error);
+    Sentry.captureMessage(message, {
+      level: level,
+      extra: extra
+    });
   }
 }
 
-function logMessage(message, level = 'info') {
-  // Use basic message capture
+// Función helper para errores
+function sendErrorToSentry(error, extra = {}) {
   if (window.Sentry) {
-    Sentry.captureMessage(message, level);
+    Sentry.captureException(error, {
+      extra: extra
+    });
   }
 }
