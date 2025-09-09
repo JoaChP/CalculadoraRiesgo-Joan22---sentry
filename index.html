@@ -11,66 +11,18 @@
   <!-- Estilos propios (opcional) -->
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- Sentry (CDN loader) -->
-  <script src="https://js.sentry-cdn.com/9f73ebcd503ecdb650d346e03e56bc14.min.js" crossorigin="anonymous"></script>
-  <script>
-    Sentry.onLoad(function () {
-      const env =
-        (location.hostname === 'localhost' || location.hostname.startsWith('127.'))
-          ? 'development'
-          : 'production';
-
-      Sentry.init({
-        dsn: 'https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168',
-        enabled: true,
-        environment: env,
-        release: 'calc-riesgo@1.0.0',
-        
-        // Configuración simplificada
-        tracesSampleRate: 0.0, // Desactivamos tracing por ahora
-        integrations: [
-          new Sentry.BrowserTracing() // Solo esta integración básica
-        ],
-        
-        // Habilita logs básicos
-        enableLogs: true
-      });
-
-      // Tags globales
-      Sentry.setTag('app', 'calc-riesgo');
-      Sentry.setTag('module', 'ui');
-
-      // Log de prueba simple
-      Sentry.captureMessage('[Riesgo] App iniciada', {
-        level: 'error'
-      });
-    });
-  </script>
-
-  <!-- Sentry SDK - minimal configuration -->
-<script 
-  src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js"
-  crossorigin="anonymous"
-></script>
+  <!-- Sentry - configuración mínima absoluta -->
+<script src="https://js.sentry-cdn.com/9f73ebcd503ecdb650d346e03e56bc14.min.js"></script>
 
 <script>
+  // Solo inicialización básica
   document.addEventListener('DOMContentLoaded', function() {
-    // Basic Sentry initialization
-    Sentry.init({
-      dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
-      enabled: true,
-      // Disable features causing errors
-      integrations: [],
-      tracesSampleRate: 0
-    });
-
-    // Configure error button
+    // Sin configuración adicional - usar valores por defecto
     const btnError = document.getElementById('btnErrorSentry');
     if (btnError) {
       btnError.addEventListener('click', function() {
-        Sentry.captureMessage('Test error from button', {
-          level: 'error'
-        });
+        // Usar la forma más básica de reportar
+        Sentry.captureMessage('Test error', 'error');
       });
     }
   });
