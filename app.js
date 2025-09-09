@@ -288,3 +288,17 @@ Sentry.captureMessage('[Riesgo] App lista', {
   level: 'info',
   extra: { href: location.href, env: Sentry.getCurrentHub()?.getScope()?.getTags()?.environment || '' }
 });
+
+function logError(error) {
+  // Use basic error capture
+  if (window.Sentry) {
+    Sentry.captureException(error);
+  }
+}
+
+function logMessage(message, level = 'info') {
+  // Use basic message capture
+  if (window.Sentry) {
+    Sentry.captureMessage(message, level);
+  }
+}
