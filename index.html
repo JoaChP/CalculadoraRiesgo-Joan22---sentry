@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./style.css" />
 
   <!-- Sentry (CDN loader) -->
-  <script src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js" crossorigin="anonymous"></script>
+  <script src="https://js.sentry-cdn.com/9f73ebcd503ecdb650d346e03e56bc14.min.js" crossorigin="anonymous"></script>
   <script>
     Sentry.onLoad(function () {
       const env =
@@ -26,25 +26,21 @@
         environment: env,
         release: 'calc-riesgo@1.0.0',
         
-        // Configuración para logs
+        // Configuración simplificada
+        tracesSampleRate: 0.0, // Desactivamos tracing por ahora
         integrations: [
-          new Sentry.BrowserTracing(),
-          new Sentry.Integrations.Console(),
-          new Sentry.Integrations.Breadcrumbs({
-            console: true
-          })
+          new Sentry.BrowserTracing() // Solo esta integración básica
         ],
         
-        // Habilita el pipeline de logs
-        autoSessionTracking: true,
-        enableTracing: true
+        // Habilita logs básicos
+        enableLogs: true
       });
 
       // Tags globales
       Sentry.setTag('app', 'calc-riesgo');
       Sentry.setTag('module', 'ui');
 
-      // Log de prueba como error
+      // Log de prueba simple
       Sentry.captureMessage('[Riesgo] App iniciada', {
         level: 'error'
       });
