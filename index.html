@@ -47,27 +47,28 @@
     });
   </script>
 
-  <!-- Sentry SDK - solo configuración básica -->
+  <!-- Sentry SDK - minimal configuration -->
 <script 
   src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js"
   crossorigin="anonymous"
 ></script>
 
 <script>
-  // Esperar a que el DOM esté listo
   document.addEventListener('DOMContentLoaded', function() {
-    // Configuración mínima de Sentry
+    // Basic Sentry initialization
     Sentry.init({
       dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
-      enabled: true
+      enabled: true,
+      // Disable features causing errors
+      integrations: [],
+      tracesSampleRate: 0
     });
 
-    // Configurar botón de error
+    // Configure error button
     const btnError = document.getElementById('btnErrorSentry');
     if (btnError) {
       btnError.addEventListener('click', function() {
-        // Enviar error de prueba simple
-        Sentry.captureMessage('Error de prueba desde botón', {
+        Sentry.captureMessage('Test error from button', {
           level: 'error'
         });
       });
