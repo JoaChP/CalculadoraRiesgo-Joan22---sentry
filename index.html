@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./style.css" />
 
   <!-- Sentry (CDN loader) -->
-  <script src="https://js.sentry-cdn.com/9f73ebcd503ecdb650d346e03e56bc14.min.js" crossorigin="anonymous"></script>
+  <script src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js" crossorigin="anonymous"></script>
   <script>
     Sentry.onLoad(function () {
       const env =
@@ -26,12 +26,18 @@
         environment: env,
         release: 'calc-riesgo@1.0.0',
         
-        // Activamos algunos features para debug
-        debug: true,
-        tracesSampleRate: 1.0,
+        // Configuración para logs
+        integrations: [
+          new Sentry.BrowserTracing(),
+          new Sentry.Integrations.Console(),
+          new Sentry.Integrations.Breadcrumbs({
+            console: true
+          })
+        ],
         
         // Habilita el pipeline de logs
-        enableLogs: true
+        autoSessionTracking: true,
+        enableTracing: true
       });
 
       // Tags globales
