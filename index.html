@@ -51,25 +51,17 @@
 <script src="https://browser.sentry-cdn.com/7.64.0/bundle.min.js" crossorigin="anonymous"></script>
 
 <script>
-  Sentry.onLoad(function() {
-    const env = location.hostname === 'localhost' ? 'development' : 'production';
-
-    Sentry.init({
-      dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
-      enabled: true,
-      environment: env,
-      release: 'calc-riesgo@1.0.0',
-      
-      // Configuración básica sin tracing
-      integrations: [],
-      tracesSampleRate: 0,
-      
-      // Habilita solo logs básicos
-      enableLogs: true
-    });
-
-    // Solo tags esenciales
-    Sentry.setTag("app", "calc-riesgo");
+  Sentry.init({
+    dsn: "https://9f73ebcd503ecdb650d346e03e56bc14@o4507908867162112.ingest.us.sentry.io/4509968922247168",
+    environment: 'production',
+    release: 'calc-riesgo@1.0.0',
+    
+    // Configuración mínima
+    integrations: [],
+    tracesSampleRate: 0.0,
+    
+    // Solo habilitar logs básicos
+    enableLogs: true
   });
 </script>
 
